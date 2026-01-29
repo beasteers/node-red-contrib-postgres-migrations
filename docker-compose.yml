@@ -21,8 +21,6 @@ services:
       - ./data:/data
     depends_on:
       - postgres
-    command: >
-      sh -c "node-red -- --node-options=\"--inspect=0.0.0.0:9229\""
     entrypoint: /bin/bash
     command: 
      - -c
