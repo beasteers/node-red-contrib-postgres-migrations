@@ -4,7 +4,7 @@ services:
   # The Node-RED service, configured for live development
   nodered:
     # Use the official Node-RED image directly. No custom build needed.
-    image: nodered/node-red:3.1.10
+    image: nodered/node-red:latest-22
     container_name: nodered-migrations-dev
     ports:
       - "1880:1880"
@@ -19,6 +19,11 @@ services:
       # 2. Persist the rest of the Node-RED data (flows, settings, etc.)
       #    so you don't lose your work on restart.
       - ./data:/data
+    environment:
+      POSTGRES_USER: nodered
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: migrations_db
+      POSTGRES_CONNECTION_STRING: postgres://nodered:mysecretpassword@postgres:5432/migrations_db
     depends_on:
       - postgres
     command: >

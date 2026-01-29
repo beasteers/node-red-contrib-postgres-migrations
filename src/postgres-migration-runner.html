@@ -7,6 +7,7 @@
   <div class="form-row">
     <label for="node-input-host"><i class="fa fa-server"></i> Host</label>
     <input type="text" id="node-input-host" placeholder="localhost" />
+    <input type="hidden" id="node-input-hostFieldType" />
   </div>
   <div class="form-row">
     <label for="node-input-port"><i class="fa fa-plug"></i> Port</label>
@@ -16,21 +17,42 @@
       placeholder="5432"
       style="width: 100px;"
     />
+    <input type="hidden" id="node-input-portFieldType" />
   </div>
   <div class="form-row">
     <label for="node-input-user"><i class="fa fa-user"></i> User</label>
     <input type="text" id="node-input-user" placeholder="postgres" />
+    <input type="hidden" id="node-input-userFieldType" />
   </div>
   <div class="form-row">
     <label for="node-input-password"><i class="fa fa-lock"></i> Password</label>
-    <input type="password" id="node-input-password" />
+    <input id="node-input-password" placeholder="postgres" />
+    <input type="hidden" id="node-input-passwordFieldType" />
   </div>
   <div class="form-row">
     <label for="node-input-database"
       ><i class="fa fa-database"></i> Database</label
     >
     <input type="text" id="node-input-database" placeholder="mydatabase" />
+    <input type="hidden" id="node-input-databaseFieldType" />
   </div>
+  <div class="form-row">
+    <label for="node-input-ssl"><i class="fa fa-shield"></i> SSL</label>
+    <input type="text" id="node-input-ssl" />
+    <input type="hidden" id="node-input-sslFieldType" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-connectionString"><i class="fa fa-link"></i> Conn. String</label>
+    <input
+      type="text"
+      id="node-input-connectionString"
+      placeholder="postgres://user:password@host:port/database"
+    />
+    <small style="display: block; color: #666;">
+      Optional. If provided, this will override the individual connection parameters
+      above.
+    </small>
+    <input type="hidden" id="node-input-connectionStringFieldType" />
 </script>
 
 <!-- Node Help Text -->
@@ -97,16 +119,29 @@
 
 <!-- Node Registration with Node-RED -->
 <script type="text/javascript">
+  function validateConnParam(v) {
+    return v || $('#node-input-connectionString').val();
+  }
   RED.nodes.registerType("postgres-migration-runner", {
     category: "storage",
     color: "#5b85a7",
     defaults: {
       name: { value: "" },
-      host: { value: "localhost", required: true },
-      port: { value: 5432, required: true, validate: RED.validators.number() },
-      user: { value: "", required: true },
-      password: { value: "", type: "password" },
-      database: { value: "", required: true },
+      host: { value: "localhost", validate: validateConnParam },
+      port: { value: 5432, validate: RED.validators.number() },
+      user: { value: "postgres", validate: validateConnParam },
+      password: { value: "postgres", validate: validateConnParam },
+      database: { value: "postgres", validate: validateConnParam },
+      ssl: { value: false },
+      connectionString: { value: "" },
+      
+      hostFieldType: { value: "str" },
+      portFieldType: { value: "num" },
+      userFieldType: { value: "str" },
+      passwordFieldType: { value: "cred" },
+      databaseFieldType: { value: "str" },
+      sslFieldType: { value: "bool" },
+      connectionStringFieldType: { value: "str" },
     },
     inputs: 1,
     outputs: 1,
@@ -115,5 +150,43 @@
       return this.name || "Postgres Migrations";
     },
     paletteLabel: "postgres migrate",
+    oneditprepare: function () {
+      const vartypes = ["env", "global", "msg"];
+      $('#node-input-host').typedInput({
+        default: 'str',
+        types: ['str', ...vartypes],
+        typeField: $('#node-input-hostFieldType'),
+      });
+      $('#node-input-port').typedInput({
+        default: 'num',
+        types: ['num', ...vartypes],
+        typeField: $('#node-input-portFieldType'),
+      });
+      $('#node-input-user').typedInput({
+        default: 'str',
+        types: ['str', ...vartypes],
+        typeField: $('#node-input-userFieldType'),
+      });
+      $('#node-input-password').typedInput({
+        default: 'cred',
+        types: ['cred', ...vartypes, 'str'],
+        typeField: $('#node-input-passwordFieldType'),
+      });
+      $('#node-input-database').typedInput({
+        default: 'str',
+        types: ['str', ...vartypes],
+        typeField: $('#node-input-databaseFieldType'),
+      });
+      $('#node-input-ssl').typedInput({
+        default: 'bool',
+        types: ['bool', ...vartypes, 'json'],
+        typeField: $('#node-input-sslFieldType'),
+      });
+      $('#node-input-connectionString').typedInput({
+        default: 'str',
+        types: ['str', 'cred', ...vartypes],
+        typeField: $('#node-input-connectionStringFieldType'),
+      });
+    },
   });
 </script>

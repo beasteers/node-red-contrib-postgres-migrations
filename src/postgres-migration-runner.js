@@ -2,6 +2,24 @@ module.exports = function (RED) {
   // We need to require these here to make them available to the node's logic
   const knex = require("knex");
 
+  function getField(node, kind, value) {
+    switch (kind) {
+      case 'flow':	// Legacy
+        return node.context().flow.get(value);
+      case 'global':
+        return node.context().global.get(value);
+      case 'num':
+        return parseInt(value);
+      case 'bool':
+      case 'json':
+        return JSON.parse(value);
+      case 'env':
+        return process.env[value];
+      default:
+        return value;
+    }
+  }
+
   function PostgresMigrationRunnerNode(config) {
     RED.nodes.createNode(this, config);
     const node = this;
@@ -32,16 +50,29 @@ module.exports = function (RED) {
         return done(new Error("Input msg.migrations must be an array."));
       }
 
+      const connection = {
+        connectionString: getField(node, config.connectionStringFieldType, config.connectionString) || undefined,
+        host: getField(node, config.hostFieldType, config.host),
+        port: getField(node, config.portFieldType, config.port),
+        user: getField(node, config.userFieldType, config.user),
+        password: getField(node, config.passwordFieldType, config.password),
+        database: getField(node, config.databaseFieldType, config.database),
+        ssl: getField(node, config.sslFieldType, config.ssl) ? { rejectUnauthorized: false } : false,
+      };
+
+      if (!connection.connectionString && (!connection.user || !connection.database)) {
+        node.status({
+          fill: "red",
+          shape: "dot",
+          text: "Missing connection parameters",
+        });
+        return done(new Error("Database connection parameters are missing. Provide either a connection string or user and database."));
+      }
+
       // --- 2. Setup Knex Connection ---
       const knexConfig = {
         client: "pg",
-        connection: {
-          host: config.host,
-          port: config.port,
-          user: config.user,
-          password: config.password,
-          database: config.database,
-        },
+        connection,
         // Suppress the warning about not specifying a pool size
         pool: { min: 0, max: 1 },
       };
