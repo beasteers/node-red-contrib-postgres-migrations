@@ -22,6 +22,7 @@
   "node-red": {
     "version": ">=4.0.0",
     "nodes": {
+      "postgres-migration-query": "postgres-migration-query.js",
       "postgres-migration-runner": "postgres-migration-runner.js"
     }
   },

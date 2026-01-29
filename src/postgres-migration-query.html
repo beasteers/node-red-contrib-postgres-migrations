@@ -1,0 +1,103 @@
+<!-- Editor Configuration Panel -->
+<script type="text/html" data-template-name="postgres-migration-query">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name" />
+  </div>
+  <div class="form-row">
+    <div
+      id="node-input-migrationSql-editor"
+      class="node-text-editor"
+      style="height: 220px; min-height: 180px;"
+    ></div>
+  </div>
+</script>
+
+<!-- Node Help Text -->
+<script type="text/html" data-help-name="postgres-migration-query">
+  <p>
+    Builds <code>msg.migrations</code> by appending a configured migration to the
+    incoming message. Chain multiple nodes to build the full array.
+  </p>
+  <h3>Inputs</h3>
+  <dl class="message-properties">
+    <dt>msg.migrations <span class="property-type">array</span></dt>
+    <dd>
+      Optional. If provided, the node appends its configured migration to the
+      array.
+    </dd>
+  </dl>
+  <h3>Outputs</h3>
+  <dl class="message-properties">
+    <dt>msg.migrations <span class="property-type">array</span></dt>
+    <dd>The migrations array with the configured migration appended.</dd>
+  </dl>
+  <h3>Details</h3>
+  <p>
+    Configure a unique migration name and its SQL. Recommended name format:
+    <code>YYYYMMDDHHmmss_description</code>.
+  </p>
+</script>
+
+<!-- Node Registration with Node-RED -->
+<script type="text/javascript">
+  const DEFAULT_SQL = `-- Your Migration Here - e.g.
+-- CREATE TABLE IF NOT EXISTS ...;`
+
+  const getTimestamp = (now) => {
+    now = now || new Date();
+    const pad = (v) => String(v).padStart(2, "0");
+    return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(
+      now.getDate()
+    )}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  };
+
+  RED.nodes.registerType("postgres-migration-query", {
+    category: "storage",
+    color: "#cca9f2",
+    defaults: {
+      name: { value: "", required: false, validate: function(v) {
+        if (!v) this.name = `${getTimestamp()}_migration`;
+        return true;
+      } },
+      SQL: { value: DEFAULT_SQL, required: true },
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "postgresql.png",
+    label: function () {
+      return this.name || "postgres migration query";
+    },
+    paletteLabel: "postgres migration query",
+    oneditprepare: function () {
+      if (!this.name?.trim()) {
+        this.name = `${getTimestamp()}_migration`;
+      }
+      $("#node-input-name").val(this.name);
+      this.editor = RED.editor.createEditor({
+        id: "node-input-migrationSql-editor",
+        mode: "ace/mode/sql",
+        value: this.SQL || "",
+      });
+    },
+    oneditsave: function () {
+      this.SQL = this.editor.getValue();
+      this.editor.destroy();
+      delete this.editor;
+    },
+    oneditcancel: function () {
+      if (this.editor) {
+        this.editor.destroy();
+        delete this.editor;
+      }
+    },
+    oneditresize: function (size) {
+      const rows = $("#node-input-migrationSql-editor");
+      const height = Math.max(180, size.height - 220);
+      rows.css("height", height + "px");
+      if (this.editor) {
+        this.editor.resize();
+      }
+    },
+  });
+</script>

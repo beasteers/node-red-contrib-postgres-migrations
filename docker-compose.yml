@@ -4,7 +4,7 @@ services:
   # The Node-RED service, configured for live development
   nodered:
     # Use the official Node-RED image directly. No custom build needed.
-    image: nodered/node-red:3.1.10
+    image: nodered/node-red:latest-22
     container_name: nodered-migrations-dev
     ports:
       - "1880:1880"

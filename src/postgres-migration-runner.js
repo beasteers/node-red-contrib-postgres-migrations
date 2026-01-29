@@ -88,12 +88,26 @@ module.exports = function (RED) {
               shape: "dot",
               text: `Applying: ${migration.name.substring(0, 20)}...`,
             });
+            if (migration.setStatus) {
+              migration.setStatus({
+                fill: "blue",
+                shape: "dot",
+                text: `Applying...`,
+              });
+            }
 
             // Execute the raw SQL from the 'up' property
             try {
               await db.raw(migration.up);
             } catch (err) {
               err.message = `${migration.name} - ${err.message}`;
+              if (migration.setStatus) {
+                migration.setStatus({
+                  fill: "red",
+                  shape: "dot",
+                  text: `Error.`,
+                });
+              }
               throw err;
             }
 
@@ -104,8 +118,22 @@ module.exports = function (RED) {
               migration_time: new Date(),
             });
             appliedMigrations.push(migration.name);
+            if (migration.setStatus) {
+              migration.setStatus({
+                fill: "green",
+                shape: "dot",
+                text: `Applied.`,
+              });
+            }
           } else {
             skippedCount++;
+            if (migration.setStatus) {
+              migration.setStatus({
+                fill: "green",
+                shape: "dot",
+                text: `Up to date.`,
+              });
+            }
           }
         }
 
