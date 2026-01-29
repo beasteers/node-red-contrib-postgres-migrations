@@ -52,21 +52,21 @@ module.exports = function (RED) {
 
       const connection = {
         connectionString: getField(node, config.connectionStringFieldType, config.connectionString) || undefined,
-        host: getField(node, config.hostFieldType, config.host),
-        port: getField(node, config.portFieldType, config.port),
+        host: getField(node, config.hostFieldType, config.host) || 'localhost',
+        port: getField(node, config.portFieldType, config.port) || 5432,
         user: getField(node, config.userFieldType, config.user),
         password: getField(node, config.passwordFieldType, config.password),
-        database: getField(node, config.databaseFieldType, config.database),
+        database: getField(node, config.databaseFieldType, config.database) || 'postgres',
         ssl: getField(node, config.sslFieldType, config.ssl) ? { rejectUnauthorized: false } : false,
       };
 
-      if (!connection.connectionString && (!connection.user || !connection.database)) {
+      if (!connection.connectionString && !(connection.user && connection.password && connection.database)) {
         node.status({
           fill: "red",
           shape: "dot",
           text: "Missing connection parameters",
         });
-        return done(new Error("Database connection parameters are missing. Provide either a connection string or user and database."));
+        return done(new Error("Database connection parameters are missing. Provide either a connection string or user and password."));
       }
 
       // --- 2. Setup Knex Connection ---
